@@ -28,8 +28,8 @@ section .data
 
         new_line:   equ 10  ; ascii code for new line
 
-        rows        equ 64
-        columns     equ 64
+        rows        equ 16
+        columns     equ 16
         array_len   equ rows * columns + rows
 
         ; initialize both arrays with new_line symbol
@@ -39,35 +39,21 @@ section .data
         live_cell   equ 111
         dead_cell   equ 110
 
-        ;live_cell_symbol db '▊'
-        ;dead_cell_symbol db '░'
+        live_cell_symbol db '▊'
+        dead_cell_symbol db '░'
 
-        message:  db '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', '░', 10
-        message_len: equ $-message
+        ; message:  db '░', '░', '■', '■', '□', '□', '░', '░', '▊', '▊', '░', '░', '░', '░', '░', '░', 10
+        ; message_len: equ $-message
 
 section .text
 
 start:
         ; PRINT clrscrn, clrscrn_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
-        PRINT message, message_len
+        ; PRINT message, message_len
 
+        call initialize
 
-        ; call initialize
+        PRINT array_one, array_len
 
 exit:
         mov       rax, 0x2000001   ; syscall exit
@@ -76,13 +62,34 @@ exit:
 
 
 initialize:
-        mov rax, 0x02000139 ; store system time
-        xor rdi, rdi
-        syscall
+        mov rdx, array_one  ; address of next byte to write
+        mov r8,  columns
+        mov r9,  0
+        mov r10, rows
+        mov r11, 0
+
+.line:
+        mov byte [rdx], '*'
+        inc rdx
+        inc r9
+        cmp r9, r8
+        jne .line
+
+.lineDone:
+        inc rdx
+        mov r9, 0
+        inc r11
+        cmp r11, r10
+        jne .line
+
+
+        ; mov rax, 0x02000139 ; store system time
+        ; xor rdi, rdi
+        ; syscall
 
         ; PRINT eax, 32
         ; mov r8w, ax  ; use only ax form it
         ; and ax, 1    ; check if this value is odd
-        ; ret
+        ret
 
 
