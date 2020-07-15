@@ -63,33 +63,27 @@ exit:
 
 initialize:
         mov rdx, array_one  ; address of next byte to write
-        mov r8,  columns
-        mov r9,  0
-        mov r10, rows
-        mov r11, 0
+        mov r8, columns
+        mov r9, rows
 
 .line:
         mov byte [rdx], '*'
         inc rdx
-        inc r9
-        cmp r9, r8
+        dec r8
+        cmp r8, 0
         jne .line
 
 .lineDone:
         inc rdx
-        mov r9, 0
-        inc r11
-        cmp r11, r10
+        mov r8, columns
+        dec r9
+        cmp r9, 0
         jne .line
-
 
         ; mov rax, 0x02000139 ; store system time
         ; xor rdi, rdi
         ; syscall
 
-        ; PRINT eax, 32
-        ; mov r8w, ax  ; use only ax form it
-        ; and ax, 1    ; check if this value is odd
         ret
 
 
