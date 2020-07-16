@@ -1,5 +1,5 @@
 ; this is for the help, because I always forget this
-; db - 1
+ db - 1
 ; dw - 2
 ; dd - 4
 
@@ -15,6 +15,12 @@
         mov     rdx, %2
         syscall
 %endmacro
+
+; TODO: later try to use special symbols
+%define live_cell_symbol '*' ; '▊'
+%define dead_cell_symbol '.' ; '░'
+
+default rel
 
 global start
 
@@ -39,12 +45,6 @@ section .data
         live_cell   equ 111
         dead_cell   equ 110
 
-        live_cell_symbol db '▊'
-        dead_cell_symbol db '░'
-
-        ; message:  db '░', '░', '■', '■', '□', '□', '░', '░', '▊', '▊', '░', '░', '░', '░', '░', '░', 10
-        ; message_len: equ $-message
-
 section .text
 
 start:
@@ -66,24 +66,36 @@ initialize:
         mov r8, columns
         mov r9, rows
 
-.line:
-        mov byte [rdx], '*'
+.initLine:
+        mov byte [rdx], dead_cell_symbol 
         inc rdx
         dec r8
         cmp r8, 0
-        jne .line
+        jne .initLine
 
-.lineDone:
+.nextLine:
         inc rdx
         mov r8, columns
         dec r9
         cmp r9, 0
-        jne .line
+        jne .initLine
 
-        ; mov rax, 0x02000139 ; store system time
-        ; xor rdi, rdi
-        ; syscall
+;        mov rax, 0x02000138 ; store system time
+;        xor rdi, rdi
+;        syscall
+
+;        mov     r14d, eax
+;        and	    eax, 1
+;        dec	    eax
+
+;        mov	    cx, 0   ; RANDOM NUMBER STORED HERE
+;        mov	    r15w, 0 ; WEYL SEQUENCE STORED HERE
+
+
+;        int 3
+        ; PRINT   word [r15w], 16
 
         ret
+
 
 
