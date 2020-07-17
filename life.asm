@@ -20,13 +20,14 @@
 %define live_cell_symbol '*' ; '▊'
 %define dead_cell_symbol '.' ; '░'
 
-default rel
+        default rel
 
-global start
+        global start
+        extern _msws
 
-section .bss
+        ; extern _foo
 
-section .data
+        section .data
 
         ; check https://stackoverflow.com/a/30253373 for the details
         clrscrn     db 27, "[2J", 27, "[H"
@@ -45,7 +46,9 @@ section .data
         live_cell   equ 111
         dead_cell   equ 110
 
-section .text
+
+        section .text
+
 
 start:
         ; PRINT clrscrn, clrscrn_len
@@ -62,28 +65,29 @@ exit:
 
 
 initialize:
-        mov rdx, array_one  ; address of next byte to write
-        mov r8, columns
-        mov r9, rows
+;        mov rdx, array_one  ; address of next byte to write
+;        mov r8, columns
+;        mov r9, rows
 
-.initLine:
-        mov byte [rdx], dead_cell_symbol 
-        inc rdx
-        dec r8
-        cmp r8, 0
-        jne .initLine
+;.initLine:
+;        mov byte [rdx], dead_cell_symbol
+;        inc rdx
+;        dec r8
+;        cmp r8, 0
+;        jne .initLine
 
-.nextLine:
-        inc rdx
-        mov r8, columns
-        dec r9
-        cmp r9, 0
-        jne .initLine
+;.nextLine:
+;        inc rdx
+;        mov r8, columns
+;        dec r9
+;        cmp r9, 0
+;        jne .initLine
 
-;        mov rax, 0x02000138 ; store system time
-;        xor rdi, rdi
-;        syscall
+        ; mov rax, 0x02000116 ; store system time
+        ; xor rdi, rdi
+        ; syscall
 
+        ; int 3
 ;        mov     r14d, eax
 ;        and	    eax, 1
 ;        dec	    eax
@@ -94,6 +98,10 @@ initialize:
 
 ;        int 3
         ; PRINT   word [r15w], 16
+
+        push      rbx
+        call _msws
+        pop      rbx
 
         ret
 
