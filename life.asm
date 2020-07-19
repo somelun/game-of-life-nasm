@@ -1,5 +1,5 @@
 ; this is for the help, because I always forget this
- db - 1
+; db - 1
 ; dw - 2
 ; dd - 4
 
@@ -23,9 +23,8 @@
         default rel
 
         global start
+        extern _printf
         extern _msws
-
-        ; extern _foo
 
         section .data
 
@@ -46,13 +45,33 @@
         live_cell   equ 111
         dead_cell   equ 110
 
+        equal_str       db "Equal", 10
+        not_equal_str   db "Not Equal", 10
+
 
         section .text
+
+    format:
+        db  "%d", 10, 0
 
 
 start:
         ; PRINT clrscrn, clrscrn_len
         ; PRINT message, message_len
+
+        ; int 3
+
+        ; mov eax, 1
+        ; mov ebx, 1
+
+        ; cmp eax, ebx
+        ; jz short .equal
+        ; PRINT not_equal_str, 10
+        ; jmp .continue
+
+        ; .equal:
+        ;     PRINT equal_str, 6
+        ; .continue:
 
         call initialize
 
@@ -65,45 +84,42 @@ exit:
 
 
 initialize:
-;        mov rdx, array_one  ; address of next byte to write
-;        mov r8, columns
-;        mov r9, rows
+        push    rbx
+        call    _msws
+        pop     rbx
+        ; now rax contains random sequence
 
-;.initLine:
-;        mov byte [rdx], dead_cell_symbol
-;        inc rdx
-;        dec r8
-;        cmp r8, 0
-;        jne .initLine
+        ; push    rbx
+        ; mov     rdi, format
+        ; mov     rsi, rax
+        ; call    _printf
+        ; pop     rbx
 
-;.nextLine:
-;        inc rdx
-;        mov r8, columns
-;        dec r9
-;        cmp r9, 0
-;        jne .initLine
+        mov     rdx, array_one  ; address of next byte to write
+        mov     rcx, columns    ; use rcx for loop
+        mov     r9, rows
 
-        ; mov rax, 0x02000116 ; store system time
-        ; xor rdi, rdi
-        ; syscall
+        .init_cell:
+                ; mov rax, 1
+                mov rbx, 1
+                ; ; int 3
+                cmp rax, rbx
+                ; int 3
 
-        ; int 3
-;        mov     r14d, eax
-;        and	    eax, 1
-;        dec	    eax
+                jnz .init_as_dead
+                mov byte [rdx], live_cell_symbol
+                jmp .continue
+                .init_as_dead:
+                    mov byte [rdx], dead_cell_symbol
+        .continue:
+                inc rdx
+                loop .init_cell
 
-;        mov	    cx, 0   ; RANDOM NUMBER STORED HERE
-;        mov	    r15w, 0 ; WEYL SEQUENCE STORED HERE
-
-
-;        int 3
-        ; PRINT   word [r15w], 16
-
-        push      rbx
-        call _msws
-        pop      rbx
+        .next_line:
+                inc     rdx
+                mov     rcx, columns
+                dec     r9
+                cmp     r9, 0
+                jne     .init_cell
 
         ret
-
-
-
