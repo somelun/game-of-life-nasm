@@ -8,4 +8,4 @@ https://opensource.apple.com/source/xnu/xnu-1504.3.12/bsd/kern/syscalls.master
 https://www.cs.uaf.edu/2017/fall/cs301/reference/x86_64.html
 https://filippo.io/making-system-calls-from-assembly-in-mac-os-x/
 https://cs.lmu.edu/~ray/notes/nasmtutorial/
-
+https://www.aldeid.com/wiki/X86-assembly/Instructions/rdtsc
