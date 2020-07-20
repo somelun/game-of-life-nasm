@@ -16,6 +16,10 @@
         syscall
 %endmacro
 
+%macro RANDOM 0
+        ;
+%endmacro
+
 ; TODO: later try to use special symbols
 %define live_cell 35 ; '▊'
 %define dead_cell 46 ; '░'
@@ -24,7 +28,7 @@
 
         global start
         extern _printf
-        extern _msws
+        extern _sleep
 
         section .data
 
@@ -45,6 +49,9 @@
         equal_str       db "Equal", 10
         not_equal_str   db "Not Equal", 10
 
+        message:  db "hollow world", 10
+        message_len: equ $-message
+
 
         section .text
 
@@ -54,11 +61,32 @@
 
 start:
         ; PRINT clrscrn, clrscrn_len
-        ; PRINT message, message_len
+        PRINT message, message_len
 
-        call initialize
 
-        PRINT array_one, array_len
+
+        ; push    rbx
+        mov     rdi, 5
+        ; mov     rsi, rax
+        call    _sleep
+        ; pop     rbx
+
+        PRINT message, message_len
+
+        ; rdtsc
+
+
+
+        ; call initialize
+        ; mov r9, array_one
+        ; mov r8, array_two
+
+        ; .tick:
+                ;
+
+
+
+        ; PRINT array_one, array_len
 
 exit:
         mov       rax, 0x2000001   ; syscall exit
@@ -71,15 +99,7 @@ initialize:
         xor     edx, edx        ; Required because there's no division of EAX solely
         mov     ecx, 2          ; 2 possible values
         div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
-        mov     eax, edx        ; -> EAX = [0,116]
-        ; add     eax, 2
-
-        ; push    rbx     ; we need to align stack
-        ; call    _msws
-        ; pop     rbx
-        ; now rax contains random sequence from _msws function call
-        ; int 3
-
+        mov     eax, edx        ; -> EAX = [0,1]
 
         ; push    rbx
         ; mov     rdi, format
@@ -102,17 +122,13 @@ initialize:
                     mov byte [rdx], dead_cell
         .continue_init:
                 inc rdx
-                ; push    rbx
-                ; call    _msws
-                ; pop     rbx
-                ; int 3
 
                 push rcx
                 push rdx
                 rdtsc
-                xor     edx, edx        ; Required because there's no division of EAX solely
-                mov     ecx, 2          ; 2 possible values
-                div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
+                xor     edx, edx
+                mov     ecx, 2
+                div     ecx
                 mov     eax, edx
                 pop rdx
                 pop rcx
