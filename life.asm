@@ -17,7 +17,15 @@
 %endmacro
 
 %macro RANDOM 0
-        ;
+        push rcx
+        push rdx
+        rdtsc
+        xor     edx, edx        ; Required because there's no division of EAX solely
+        mov     ecx, 2          ; 2 possible values
+        div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
+        mov     eax, edx        ; -> EAX = [0,1]
+        pop rdx
+        pop rcx
 %endmacro
 
 ; TODO: later try to use special symbols
@@ -61,23 +69,30 @@
 
 start:
         ; PRINT clrscrn, clrscrn_len
-        PRINT message, message_len
+        ; PRINT message, message_len
 
 
 
         ; push    rbx
-        mov     rdi, 5
-        ; mov     rsi, rax
-        call    _sleep
+        ; mov     rdi, 3
+        ; ; mov     rsi, rax
+        ; call    _sleep
         ; pop     rbx
 
-        PRINT message, message_len
+        ; PRINT message, message_len
+
+        ; mov     rdi, 3
+        ; ; mov     rsi, rax
+        ; call    _sleep
+
+        ; PRINT message, message_len
 
         ; rdtsc
 
 
 
-        ; call initialize
+
+        call initialize
         ; mov r9, array_one
         ; mov r8, array_two
 
@@ -86,7 +101,8 @@ start:
 
 
 
-        ; PRINT array_one, array_len
+        PRINT array_one, array_len
+        call exit
 
 exit:
         mov       rax, 0x2000001   ; syscall exit
@@ -95,11 +111,13 @@ exit:
 
 
 initialize:
-        rdtsc
-        xor     edx, edx        ; Required because there's no division of EAX solely
-        mov     ecx, 2          ; 2 possible values
-        div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
-        mov     eax, edx        ; -> EAX = [0,1]
+        ; rdtsc
+        ; xor     edx, edx        ; Required because there's no division of EAX solely
+        ; mov     ecx, 2          ; 2 possible values
+        ; div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
+        ; mov     eax, edx        ; -> EAX = [0,1]
+
+        RANDOM
 
         ; push    rbx
         ; mov     rdi, format
@@ -123,15 +141,16 @@ initialize:
         .continue_init:
                 inc rdx
 
-                push rcx
-                push rdx
-                rdtsc
-                xor     edx, edx
-                mov     ecx, 2
-                div     ecx
-                mov     eax, edx
-                pop rdx
-                pop rcx
+                ; push rcx
+                ; push rdx
+                ; rdtsc
+                ; xor     edx, edx
+                ; mov     ecx, 2
+                ; div     ecx
+                ; mov     eax, edx
+                ; pop rdx
+                ; pop rcx
+                RANDOM
 
 
                 loop .init_cell
