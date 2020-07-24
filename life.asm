@@ -60,6 +60,25 @@
         message:  db "hollow world", 10
         message_len: equ $-message
 
+        test_array:     db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
+
+        test_array_len: equ $-test_array
+
 
         section .text
 
@@ -70,6 +89,8 @@
 start:
         ; PRINT clrscrn, clrscrn_len
         ; PRINT message, message_len
+
+        PRINT test_array, test_array_len
 
 
 
@@ -92,7 +113,7 @@ start:
 
 
 
-        call initialize
+        ; call initialize
         ; mov r9, array_one
         ; mov r8, array_two
 
@@ -101,8 +122,8 @@ start:
 
 
 
-        PRINT array_one, array_len
-        call exit
+        ; PRINT array_one, array_len
+        ; call exit
 
 exit:
         mov       rax, 0x2000001   ; syscall exit
@@ -119,11 +140,11 @@ initialize:
 
         RANDOM
 
-        ; push    rbx
-        ; mov     rdi, format
-        ; mov     rsi, rax
-        ; call    _printf
-        ; pop     rbx
+        push    rbx
+        mov     rdi, format
+        mov     rsi, rax
+        call    _printf
+        pop     rbx
 
         mov     rdx, array_one  ; address of next byte to write
         mov     rcx, columns    ; use rcx for loop
@@ -151,6 +172,12 @@ initialize:
                 ; pop rdx
                 ; pop rcx
                 RANDOM
+
+                push    rbx
+                mov     rdi, format
+                mov     rsi, rax
+                call    _printf
+                pop     rbx
 
 
                 loop .init_cell
