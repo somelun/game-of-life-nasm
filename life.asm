@@ -16,6 +16,7 @@
         syscall
 %endmacro
 
+;TODO: refactor this
 %macro RANDOM 0
         push rcx
         push rdx
@@ -26,6 +27,11 @@
         mov     eax, edx        ; -> EAX = [0,1]
         pop rdx
         pop rcx
+
+        ; rdtsc
+        ; xor al, ah
+        ; xor ax, si
+        ; xor ax, cx
 %endmacro
 
 ; TODO: later try to use special symbols
@@ -54,76 +60,63 @@
         array_one   times array_len db new_line
         array_two   times array_len db new_line
 
-        equal_str       db "Equal", 10
-        not_equal_str   db "Not Equal", 10
-
-        message:  db "hollow world", 10
-        message_len: equ $-message
-
-        test_array:     db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-                       db   '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', 10
-
+        test_array:     db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
         test_array_len: equ $-test_array
-
 
         section .text
 
-    format:
-        db  "%d", 10, 0
+    ; used for _printf call
+    format          db  "%d", 10, 0
 
 
 start:
-        ; PRINT clrscrn, clrscrn_len
-        ; PRINT message, message_len
+        PRINT clrscrn, clrscrn_len
 
-        PRINT test_array, test_array_len
+        mov r9, test_array  ; array_one ; this is current generation
+        mov r8, array_two   ; this is next generation
 
+        .step:
+                xchg r8, r9
+                PRINT r8, array_len
 
+                mov     rdi, 1
+                call    _sleep
+                PRINT clrscrn, clrscrn_len
 
-        ; push    rbx
-        ; mov     rdi, 3
-        ; ; mov     rsi, rax
-        ; call    _sleep
-        ; pop     rbx
-
-        ; PRINT message, message_len
-
-        ; mov     rdi, 3
-        ; ; mov     rsi, rax
-        ; call    _sleep
-
-        ; PRINT message, message_len
-
-        ; rdtsc
+                ; jmp .next_generation
+                jmp exit    ; for now just skip next generation
 
 
+.next_generation:
+        xor rbx, rbx
+        .handle_cell:
+                lea r11, [r8 + rbx] ; TODO: i bet this can be optimized
+                cmp r11, new_line
+                je .next_cell
 
+                ; insert neighbor cells check here
 
-        ; call initialize
-        ; mov r9, array_one
-        ; mov r8, array_two
+                .next_cell:
+                        inc rbx
+                        cmp rbx, array_len
+                        jne .handle_cell
+                        jmp start.step
 
-        ; .tick:
-                ;
-
-
-
-        ; PRINT array_one, array_len
-        ; call exit
 
 exit:
         mov       rax, 0x2000001   ; syscall exit
@@ -131,13 +124,7 @@ exit:
         syscall
 
 
-initialize:
-        ; rdtsc
-        ; xor     edx, edx        ; Required because there's no division of EAX solely
-        ; mov     ecx, 2          ; 2 possible values
-        ; div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
-        ; mov     eax, edx        ; -> EAX = [0,1]
-
+first_generation:
         RANDOM
 
         push    rbx
@@ -162,15 +149,6 @@ initialize:
         .continue_init:
                 inc rdx
 
-                ; push rcx
-                ; push rdx
-                ; rdtsc
-                ; xor     edx, edx
-                ; mov     ecx, 2
-                ; div     ecx
-                ; mov     eax, edx
-                ; pop rdx
-                ; pop rcx
                 RANDOM
 
                 push    rbx
