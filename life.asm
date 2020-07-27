@@ -126,8 +126,8 @@
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
-                    ;        255                                                                        270
+                        db   '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
+                    ;        255                                                                        270  271
         test_array_len  equ $-test_array
 
         section .text
@@ -150,15 +150,15 @@ start:
                 ; call    _sleep
                 ; PRINT clrscrn, clrscrn_len
 
-                ; ; Begin Test
-                ; xor rcx, rcx
-                ; mov r11, 255
-                ; call check_left
+                ; Begin Test
+                xor rcx, rcx
+                mov r11, 270
+                call check_right
 
-                ; mov     rdi,    format
-                ; mov     rsi,    rcx
-                ; call    _printf
-                ; ; End Test
+                mov rdi, format
+                mov rsi, rcx
+                call _printf
+                ; End Test
 
                 ; jmp next_generation
                 jmp exit    ; for now just skip next generation
@@ -203,7 +203,7 @@ check_left:
         mov r15, columns
         add r15, 1  ; +1 here, because i have additional column of 10
 
-        ; calculate current column % r15, if ==0, then its left column
+        ; calculate (current column) % r15, if == 0, then it is a left column
         xor rdx, rdx
         mov rax, r11
         div r15
@@ -214,7 +214,7 @@ check_left:
         jmp .continue
         .else_branch:
                 add r11, columns
-                dec r11
+                inc r11
 
         .continue:
                 cmp byte [r8 + r11], live_cell
@@ -227,9 +227,32 @@ check_left:
 ; rcx - live cells counter
 ; r11 - current cell to check
 check_right:
+        ; int 3
         push r11
-        pop r11
-        ret
+        mov r15, columns
+        add r15, 1  ; +1 here, because i have additional column of 10
+
+        ; calculate (current column + 2) % r15, if == 0, then it is a right column
+        xor rdx, rdx
+        mov rax, r11
+        add rax, 2
+        div r15
+
+        cmp rdx, 0  ; reminder from div goes to rdx
+        je .else_branch
+        inc r11
+        jmp .continue
+        .else_branch:
+                sub r11, columns
+                inc r11
+
+        .continue:
+                cmp byte [r8 + r11], live_cell
+                jne .done
+                inc rcx
+                .done:
+                        pop r11
+                        ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
