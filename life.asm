@@ -1,13 +1,15 @@
-; this is for the help, because I always forget this
-; db - 1
-; dw - 2
-; dd - 4
+; MacOS x64 NASM implementation of Conway's Game of Life
 
-; list of syscalls
-; /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include/sys/syscall.h
 
-; first param - what to print
-; second param - size
+
+; TODO: later try to use special symbols
+%define live_cell 35 ; '▊'
+%define dead_cell 46 ; '░'
+
+
+; print to screen
+;   %1 - what to print
+;   %2 - size of memory
 %macro  PRINT 2
         mov     rax, 0x2000004      ; syscall write
         mov     rdi, 1              ; stdout identifier
@@ -16,15 +18,30 @@
         syscall
 %endmacro
 
-;TODO: refactor this
+
+; check if cell is live
+;   r8 - array begin,
+;   r11 - index of cell,
+;   rcx - live cells counter
+%macro CHECK_IF_LIVE 0
+        cmp byte [r8 + r11], live_cell
+        jne .done
+        inc rcx
+
+        .done:
+%endmacro
+
+
+;random munber using rdtsc
+;   TODO: fix and refactor this
 %macro RANDOM 0
         push rcx
         push rdx
         rdtsc
-        xor     edx, edx        ; Required because there's no division of EAX solely
+        xor     edx, edx        ; required because there's no division of EAX solely
         mov     ecx, 2          ; 2 possible values
-        div     ecx             ; EDX:EAX / ECX --> EAX quotient, EDX remainder
-        mov     eax, edx        ; -> EAX = [0,1]
+        div     ecx             ; edx:eax / ecx --> eax quotient, edx remainder
+        mov     eax, edx        ; -> eax = [0,1]
         pop rdx
         pop rcx
 
@@ -35,81 +52,28 @@
 %endmacro
 
 
-;   0 1 0 0 10
-;   0 0 1 0 10
-;   1 1 1 0 10
-;   0 0 0 0 10
-;   0 0 0 0 10
-;
-;   0 1 0 0 10 0 0 1 0 10 1 1 1 0 10 0 0 0 0 10 0 0 0 0 10
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;   P P P 0 10
-;   P T P 0 10
-;   P P P 0 10
-;   0 0 0 0 10
-;   0 0 0 0 10
-;
-;   P P P 0 10 P T P 0 10 P P P 0 10 0 0 0 0 10 0 0 0 0 10
-;   6 5 4 3  2 1 0 1 2  3 4 5 6
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;   0 1 0 0 10
-;   0 P P P 10
-;   1 P T P 10
-;   0 P P P 10
-;   0 0 0 0 10
-;
-;   0 1 0 0 10 0 P P P 10 1 P T P 10 0 P P P 10 0 0 0 0 10
-;                6 5 4  3 2 1 0 1  2 3 4 5 6
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;   P P 0 0 10
-;   P P 1 0 10
-;   1 1 1 0 10
-;   0 0 P P 10
-;   0 0 P T 10
-;
-;   P P 0 0 10 P P 1 0 10 1 1 1 0 10 0 0 P P 10 0 0 P T 10
-;   1 2                                  6 5  4 3 2 1 0  1
-;
-;
-;
-;   0 1 0 0 10
-;   0 0 1 0 10
-;   P P 1 P 10
-;   T P 0 P 10
-;   P P 0 P 10
-;
-;   P P 0 0 10 P P 1 0 10 1 1 1 0 10 0 0 P P 10 0 0 P T 10
-;   1 2                                  6 5  4 3 2 1 0  1
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; TODO: later try to use special symbols
-%define live_cell 35 ; '▊'
-%define dead_cell 46 ; '░'
-
         default rel
 
         global start
         extern _printf
         extern _sleep
 
+
         section .data
 
-        ; check https://stackoverflow.com/a/30253373 for the details
-        clrscrn     db 27, "[2J", 27, "[H"
-        clrscrn_len equ $-clrscrn
+        ; see https://stackoverflow.com/a/30253373 for the details
+        clrscrn         db 27, "[2J", 27, "[H"
+        clrscrn_len     equ $-clrscrn
 
-        new_line    equ 10  ; ascii code for new line
+        new_line        equ 10  ; ascii code for new line
 
-        rows        equ 16
-        columns     equ 16
-        array_len   equ rows * columns + rows
+        rows            equ 16
+        columns         equ 16
+        array_len       equ rows * columns + rows
 
         ; initialize both arrays with new_line symbol
-        array_one   times array_len db new_line
-        array_two   times array_len db new_line
+        array_one       times array_len db new_line
+        array_two       times array_len db new_line
 
         test_array      db   '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
                         db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
@@ -152,7 +116,7 @@ start:
 
                 ; Begin Test
                 xor rcx, rcx
-                mov r11, 256
+                mov r11, 255
                 call check_bottom
 
                 mov rdi, format
@@ -218,13 +182,9 @@ check_left:
                 inc r11
 
         .continue:
-                cmp byte [r8 + r11], live_cell
-                jne .done
-                inc rcx
-
-                .done:
-                        pop r11
-                        ret
+                CHECK_IF_LIVE
+                pop r11
+                ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
@@ -249,13 +209,9 @@ check_right:
                 inc r11
 
         .continue:
-                cmp byte [r8 + r11], live_cell
-                jne .done
-                inc rcx
-
-                .done:
-                        pop r11
-                        ret
+                CHECK_IF_LIVE
+                pop r11
+                ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
@@ -274,13 +230,9 @@ check_top:
                 add r11, r15
 
         .continue:
-                cmp byte [r8 + r11], live_cell
-                jne .done
-                inc rcx
-
-                .done:
-                    pop r11
-                    ret
+                CHECK_IF_LIVE
+                pop r11
+                ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
@@ -298,13 +250,9 @@ check_bottom:
                 sub r11, array_len
 
         .continue:
-                cmp byte [r8 + r11], live_cell
-                jne .done
-                inc rcx
-
-                .done:
-                    pop r11
-                    ret
+                CHECK_IF_LIVE
+                pop r11
+                ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
@@ -335,7 +283,7 @@ check_bottom_right:
         ret
 
 
-; use this one later
+; TODO: fix, refactor and use this part later
 first_generation:
         RANDOM
 
