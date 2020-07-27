@@ -152,8 +152,8 @@ start:
 
                 ; Begin Test
                 xor rcx, rcx
-                mov r11, 15
-                call check_top
+                mov r11, 256
+                call check_bottom
 
                 mov rdi, format
                 mov rsi, rcx
@@ -271,23 +271,40 @@ check_top:
 
         .else_branch:
                 mov r15, array_len
-                add r15, r11
+                add r11, r15
 
         .continue:
-            cmp byte [r8 + r15], live_cell
-            jne .done
-            inc rcx
+                cmp byte [r8 + r11], live_cell
+                jne .done
+                inc rcx
 
-            .done:
-                pop r11
-                ret
+                .done:
+                    pop r11
+                    ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
 check_bottom:
         push r11
-        pop r11
-        ret
+        mov r15, columns
+        add r15, 1  ; +1 here, because i have additional column of 10
+
+        add r11, r15
+        cmp r11, array_len
+        jae .else_branch
+        jmp .continue
+
+        .else_branch:
+                sub r11, array_len
+
+        .continue:
+                cmp byte [r8 + r11], live_cell
+                jne .done
+                inc rcx
+
+                .done:
+                    pop r11
+                    ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
@@ -309,7 +326,6 @@ check_bottom_left:
         push r11
         pop r11
         ret
-
 
 ; rcx - live cells counter
 ; r11 - current cell to check
