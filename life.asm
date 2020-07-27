@@ -9,7 +9,7 @@
 ; first param - what to print
 ; second param - size
 %macro  PRINT 2
-        mov     rax, 0x2000004     ; syscall write
+        mov     rax, 0x2000004      ; syscall write
         mov     rdi, 1              ; stdout identifier
         mov     rsi, %1
         mov     rdx, %2
@@ -34,6 +34,57 @@
         ; xor ax, cx
 %endmacro
 
+
+;   0 1 0 0 10
+;   0 0 1 0 10
+;   1 1 1 0 10
+;   0 0 0 0 10
+;   0 0 0 0 10
+;
+;   0 1 0 0 10 0 0 1 0 10 1 1 1 0 10 0 0 0 0 10 0 0 0 0 10
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;   P P P 0 10
+;   P T P 0 10
+;   P P P 0 10
+;   0 0 0 0 10
+;   0 0 0 0 10
+;
+;   P P P 0 10 P T P 0 10 P P P 0 10 0 0 0 0 10 0 0 0 0 10
+;   6 5 4 3  2 1 0 1 2  3 4 5 6
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;   0 1 0 0 10
+;   0 P P P 10
+;   1 P T P 10
+;   0 P P P 10
+;   0 0 0 0 10
+;
+;   0 1 0 0 10 0 P P P 10 1 P T P 10 0 P P P 10 0 0 0 0 10
+;                6 5 4  3 2 1 0 1  2 3 4 5 6
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;   P P 0 0 10
+;   P P 1 0 10
+;   1 1 1 0 10
+;   0 0 P P 10
+;   0 0 P T 10
+;
+;   P P 0 0 10 P P 1 0 10 1 1 1 0 10 0 0 P P 10 0 0 P T 10
+;   1 2                                  6 5  4 3 2 1 0  1
+;
+;
+;
+;   0 1 0 0 10
+;   0 0 1 0 10
+;   P P 1 P 10
+;   T P 0 P 10
+;   P P 0 P 10
+;
+;   P P 0 0 10 P P 1 0 10 1 1 1 0 10 0 0 P P 10 0 0 P T 10
+;   1 2                                  6 5  4 3 2 1 0  1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; TODO: later try to use special symbols
 %define live_cell 35 ; '▊'
 %define dead_cell 46 ; '░'
@@ -50,7 +101,7 @@
         clrscrn     db 27, "[2J", 27, "[H"
         clrscrn_len equ $-clrscrn
 
-        new_line:   equ 10  ; ascii code for new line
+        new_line    equ 10  ; ascii code for new line
 
         rows        equ 16
         columns     equ 16
@@ -60,7 +111,7 @@
         array_one   times array_len db new_line
         array_two   times array_len db new_line
 
-        test_array:     db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+        test_array      db   '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
                         db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
@@ -75,41 +126,62 @@
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-        test_array_len: equ $-test_array
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
+                    ;        255                                                                        270
+        test_array_len  equ $-test_array
 
         section .text
 
-    ; used for _printf call
-    format          db  "%d", 10, 0
+        ; used for _printf call
+        format          db  "%d", 10, 0
 
 
 start:
-        PRINT clrscrn, clrscrn_len
+        ; PRINT clrscrn, clrscrn_len
 
         mov r9, test_array  ; array_one ; this is current generation
         mov r8, array_two   ; this is next generation
 
         .step:
                 xchg r8, r9
-                PRINT r8, array_len
+                ; PRINT r8, array_len
 
-                mov     rdi, 1
-                call    _sleep
-                PRINT clrscrn, clrscrn_len
+                ; mov     rdi, 1
+                ; call    _sleep
+                ; PRINT clrscrn, clrscrn_len
 
-                ; jmp .next_generation
+                ; ; Begin Test
+                ; xor rcx, rcx
+                ; mov r11, 255
+                ; call check_left
+
+                ; mov     rdi,    format
+                ; mov     rsi,    rcx
+                ; call    _printf
+                ; ; End Test
+
+                ; jmp next_generation
                 jmp exit    ; for now just skip next generation
 
 
-.next_generation:
+next_generation:
         xor rbx, rbx
         .handle_cell:
-                lea r11, [r8 + rbx] ; TODO: i bet this can be optimized
-                cmp r11, new_line
+                cmp byte [r8 + rbx], new_line
                 je .next_cell
 
+                xor rcx, rcx
+                mov r11, rbx
+
                 ; insert neighbor cells check here
+                call check_left
+                call check_right
+                call check_top_left
+                call check_top
+                call check_top_right
+                call check_bottom_left
+                call check_bottom
+                call check_bottom_right
 
                 .next_cell:
                         inc rbx
@@ -119,11 +191,90 @@ start:
 
 
 exit:
-        mov       rax, 0x2000001   ; syscall exit
+        mov       rax, 0x2000001    ; syscall exit
         xor       rdi, rdi          ; exit code 0
         syscall
 
 
+; rcx - live cells counter
+; r11 - current cell to check
+check_left:
+        push r11
+        mov r15, columns
+        add r15, 1  ; +1 here, because i have additional column of 10
+
+        ; calculate current column % r15, if ==0, then its left column
+        xor rdx, rdx
+        mov rax, r11
+        div r15
+
+        cmp rdx, 0  ; reminder from div goes to rdx
+        je .else_branch
+        dec r11
+        jmp .continue
+        .else_branch:
+                add r11, columns
+                dec r11
+
+        .continue:
+                cmp byte [r8 + r11], live_cell
+                jne .done
+                inc rcx
+                .done:
+                        pop r11
+                        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_right:
+        push r11
+        pop r11
+        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_top_left:
+        push r11
+        pop r11
+        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_top:
+        push r11
+        pop r11
+        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_top_right:
+        push r11
+        pop r11
+        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_bottom_left:
+        push r11
+        pop r11
+        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_bottom:
+        push r11
+        pop r11
+        ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_bottom_right:
+        push r11
+        pop r11
+        ret
+
+
+; use this one later
 first_generation:
         RANDOM
 
