@@ -152,8 +152,8 @@ start:
 
                 ; Begin Test
                 xor rcx, rcx
-                mov r11, 270
-                call check_right
+                mov r11, 15
+                call check_top
 
                 mov rdi, format
                 mov rsi, rcx
@@ -212,6 +212,7 @@ check_left:
         je .else_branch
         dec r11
         jmp .continue
+
         .else_branch:
                 add r11, columns
                 inc r11
@@ -220,6 +221,7 @@ check_left:
                 cmp byte [r8 + r11], live_cell
                 jne .done
                 inc rcx
+
                 .done:
                         pop r11
                         ret
@@ -227,7 +229,6 @@ check_left:
 ; rcx - live cells counter
 ; r11 - current cell to check
 check_right:
-        ; int 3
         push r11
         mov r15, columns
         add r15, 1  ; +1 here, because i have additional column of 10
@@ -242,6 +243,7 @@ check_right:
         je .else_branch
         inc r11
         jmp .continue
+
         .else_branch:
                 sub r11, columns
                 inc r11
@@ -250,20 +252,46 @@ check_right:
                 cmp byte [r8 + r11], live_cell
                 jne .done
                 inc rcx
+
                 .done:
                         pop r11
                         ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
-check_top_left:
+check_top:
+        push r11
+        mov r15, columns
+        add r15, 1  ; +1 here, because i have additional column of 10
+
+        sub r11, r15
+        cmp r11, 0
+        jl .else_branch ; if less, make it looped
+        jmp .continue
+
+        .else_branch:
+                mov r15, array_len
+                add r15, r11
+
+        .continue:
+            cmp byte [r8 + r15], live_cell
+            jne .done
+            inc rcx
+
+            .done:
+                pop r11
+                ret
+
+; rcx - live cells counter
+; r11 - current cell to check
+check_bottom:
         push r11
         pop r11
         ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
-check_top:
+check_top_left:
         push r11
         pop r11
         ret
@@ -282,12 +310,6 @@ check_bottom_left:
         pop r11
         ret
 
-; rcx - live cells counter
-; r11 - current cell to check
-check_bottom:
-        push r11
-        pop r11
-        ret
 
 ; rcx - live cells counter
 ; r11 - current cell to check
