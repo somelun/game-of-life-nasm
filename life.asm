@@ -32,7 +32,7 @@
 %endmacro
 
 ; move index left
-;   curent index in r11
+;   current index in r11
 ;   return index in r11
 %macro STEP_LEFT 0
         mov r15, columns
@@ -74,13 +74,13 @@
                 sub r11, columns        ; sub columns number from r11
                 inc r11                 ; and add 1 to make it looped from the left
                                         ;
-        %%done                          ; exit
+        %%done:                         ; exit
 %endmacro
 
 ; move index up
 ;   current index in r11
 ;   return index in r11
-%macro STEP_UP 0
+%macro STEP_UP 0                        ; TODO: add comments
         mov r15, columns
         add r15, 1                      ; +1, because extra column of 10
                                         ;
@@ -99,7 +99,7 @@
 ; move index down
 ;   current index in r11
 ;   return index in r11
-%macro STEP_DOWN 0
+%macro STEP_DOWN 0                      ; TODO: add comments
         mov r15, columns
         add r15, 1                      ; +1, because extra column of 10
                                         ;
@@ -111,13 +111,13 @@
         %%else_branch:                  ;
                 sub r11, array_len      ;
                                         ;
-        %%done                          ;
+        %%done:                         ;
 %endmacro
 
 
 ;random munber using rdtsc
 ;   TODO: fix and refactor this
-%macro RANDOM 0
+%macro RANDOM 0                         ; TODO: add comments
         push rcx
         push rdx
         rdtsc
@@ -158,7 +158,7 @@
         array_one       times array_len db new_line
         array_two       times array_len db new_line
 
-        test_array      db   '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
+        test_array      db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
@@ -173,8 +173,7 @@
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
-                    ;        255                                                                        270  271
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
         test_array_len  equ $-test_array
 
         section .text
@@ -184,33 +183,42 @@
 
 
 start:
-        ; PRINT clrscrn, clrscrn_len
+        PRINT clrscrn, clrscrn_len
 
         mov r9, test_array  ; array_one ; this is current generation
         mov r8, array_two   ; this is next generation
 
+        ; int 3
+
         .step:
                 xchg r8, r9
-                ; PRINT r8, array_len
+                PRINT r8, array_len
 
-                ; mov     rdi, 1
-                ; call    _sleep
-                ; PRINT clrscrn, clrscrn_len
+                push rax
+                push r8
+                push r9
+                mov     rdi, 1
+                call    _sleep
+                PRINT clrscrn, clrscrn_len
+                pop r9
+                pop r8
+                pop rax
 
-                ; Begin Test
-                xor rcx, rcx
-                mov r11, 2
-                ; call check_top
-                STEP_LEFT
-                CHECK_IF_LIVE
+                ; ; Begin Test
+                ; xor rcx, rcx
+                ; mov r11, 2
+                ; ; call check_top
+                ; STEP_LEFT
+                ; CHECK_IF_LIVE
 
-                mov rdi, format
-                mov rsi, rcx
-                call _printf
-                ; End Test
+                ; mov rdi, format
+                ; mov rsi, rcx
+                ; call _printf
+                ; ; End Test
 
-                ; jmp next_generation
-                jmp exit    ; for now just skip next generation
+                ; int 3
+                jmp next_generation
+                ; jmp exit    ; for now just skip next generation
 
 
 next_generation:
@@ -223,7 +231,74 @@ next_generation:
                 mov r11, rbx
 
                 ; insert neighbor cells check here
-                ;
+                push r11
+                        STEP_LEFT
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_RIGHT
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_UP
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_DOWN
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_LEFT
+                        STEP_UP
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_LEFT
+                        STEP_DOWN
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_RIGHT
+                        STEP_UP
+                        CHECK_IF_LIVE
+                pop r11
+
+                push r11
+                        STEP_RIGHT
+                        STEP_DOWN
+                        CHECK_IF_LIVE
+                pop r11
+
+                mov r10, rcx
+                xor rcx, rcx
+
+                ; check current cell
+                CHECK_IF_LIVE
+                cmp rcx, 1  ; current cell is live
+                je .is_live
+                cmp r10, 3
+                je .should_alive
+
+                .should_alive:
+                        mov byte [r8 + r11], live_cell
+                        jmp .next_cell
+
+                .is_live:
+                        cmp r10, 2
+                        jl .should_die
+                        cmp r10, 3
+                        jg .should_die
+                        jmp .next_cell
+
+                .should_die:
+                        mov byte [r8 + r11], dead_cell
+                        jmp .next_cell
 
                 .next_cell:
                         inc rbx
