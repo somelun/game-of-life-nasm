@@ -11,8 +11,8 @@
 ;   %1 - what to print
 ;   %2 - size of memory
 %macro  PRINT 2
-        mov     rax, 0x2000004      ; syscall write
-        mov     rdi, 1              ; stdout identifier
+        mov     rax, 0x2000004          ; syscall write
+        mov     rdi, 1                  ; stdout identifier
         mov     rsi, %1
         mov     rdx, %2
         syscall
@@ -25,10 +25,93 @@
 ;   rcx - live cells counter
 %macro CHECK_IF_LIVE 0
         cmp byte [r8 + r11], live_cell
-        jne .done
+        jne %%done
         inc rcx
 
-        .done:
+        %%done:
+%endmacro
+
+; move index left
+;   curent index in r11
+;   return index in r11
+%macro STEP_LEFT 0
+        mov r15, columns
+        add r15, 1                      ; +1, because extra column of 10
+
+        xor rdx, rdx                    ; rdx must be zeroed before div
+        mov rax, r11                    ; place current column to rax
+        div r15                         ; calculate rax % r15
+                                        ; reminder from div goes to rdx
+        cmp rdx, 0                      ; compare rdx and 0
+        je %%else_branch                ; if rdx == 0 -> left column, go to %%else_branch
+        dec r11                         ; else just dec r11
+        jmp %%done                      ;
+                                        ;
+        %%else_branch:                  ;
+                add r11, r15            ; add r15 to make it looped from the right
+                                        ;
+        %%done:                         ; exit
+%endmacro
+
+; move index right
+;   current index in r11
+;   return index in r11
+%macro STEP_RIGHT 0
+        mov r15, columns
+        add r15, 1                      ; +1, because extra column of 10
+
+        xor rdx, rdx                    ; rdx must be zeroed before div
+        mov rax, r11                    ; place current column to rax
+        add rax, 2                      ; calculate (current column + 2) % r15, if == 0, then it is a right column
+        div r15                         ; calculate rax % r15
+                                        ; reminder from div goes to rdx
+        cmp rdx, 0                      ; compare rdx and 0,
+        je %%else_branch                ; if rdx == 0 -> right column, go to %%else_branch
+        inc r11                         ; else just inc r11
+        jmp %%done                      ;
+                                        ;
+        %%else_branch:                  ;
+                sub r11, columns        ; sub columns number from r11
+                inc r11                 ; and add 1 to make it looped from the left
+                                        ;
+        %%done                          ; exit
+%endmacro
+
+; move index up
+;   current index in r11
+;   return index in r11
+%macro STEP_UP 0
+        mov r15, columns
+        add r15, 1                      ; +1, because extra column of 10
+                                        ;
+        sub r11, r15                    ;
+        cmp r11, 0                      ;
+        jl %%else_branch                ; if less, make it looped
+        jmp %%done                      ;
+                                        ;
+        %%else_branch:                  ;
+                mov r15, array_len      ;
+                add r11, r15            ;
+                                        ;
+        %%done:                         ;
+%endmacro
+
+; move index down
+;   current index in r11
+;   return index in r11
+%macro STEP_DOWN 0
+        mov r15, columns
+        add r15, 1                      ; +1, because extra column of 10
+                                        ;
+        add r11, r15                    ;
+        cmp r11, array_len              ;
+        jae %%else_branch               ;
+        jmp %%done                      ;
+                                        ;
+        %%else_branch:                  ;
+                sub r11, array_len      ;
+                                        ;
+        %%done                          ;
 %endmacro
 
 
@@ -116,8 +199,10 @@ start:
 
                 ; Begin Test
                 xor rcx, rcx
-                mov r11, 255
-                call check_bottom
+                mov r11, 2
+                ; call check_top
+                STEP_LEFT
+                CHECK_IF_LIVE
 
                 mov rdi, format
                 mov rsi, rcx
@@ -138,14 +223,7 @@ next_generation:
                 mov r11, rbx
 
                 ; insert neighbor cells check here
-                call check_left
-                call check_right
-                call check_top_left
-                call check_top
-                call check_top_right
-                call check_bottom_left
-                call check_bottom
-                call check_bottom_right
+                ;
 
                 .next_cell:
                         inc rbx
@@ -158,129 +236,6 @@ exit:
         mov       rax, 0x2000001    ; syscall exit
         xor       rdi, rdi          ; exit code 0
         syscall
-
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_left:
-        push r11
-        mov r15, columns
-        add r15, 1  ; +1 here, because i have additional column of 10
-
-        ; calculate (current column) % r15, if == 0, then it is a left column
-        xor rdx, rdx
-        mov rax, r11
-        div r15
-
-        cmp rdx, 0  ; reminder from div goes to rdx
-        je .else_branch
-        dec r11
-        jmp .continue
-
-        .else_branch:
-                add r11, columns
-                inc r11
-
-        .continue:
-                CHECK_IF_LIVE
-                pop r11
-                ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_right:
-        push r11
-        mov r15, columns
-        add r15, 1  ; +1 here, because i have additional column of 10
-
-        ; calculate (current column + 2) % r15, if == 0, then it is a right column
-        xor rdx, rdx
-        mov rax, r11
-        add rax, 2
-        div r15
-
-        cmp rdx, 0  ; reminder from div goes to rdx
-        je .else_branch
-        inc r11
-        jmp .continue
-
-        .else_branch:
-                sub r11, columns
-                inc r11
-
-        .continue:
-                CHECK_IF_LIVE
-                pop r11
-                ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_top:
-        push r11
-        mov r15, columns
-        add r15, 1  ; +1 here, because i have additional column of 10
-
-        sub r11, r15
-        cmp r11, 0
-        jl .else_branch ; if less, make it looped
-        jmp .continue
-
-        .else_branch:
-                mov r15, array_len
-                add r11, r15
-
-        .continue:
-                CHECK_IF_LIVE
-                pop r11
-                ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_bottom:
-        push r11
-        mov r15, columns
-        add r15, 1  ; +1 here, because i have additional column of 10
-
-        add r11, r15
-        cmp r11, array_len
-        jae .else_branch
-        jmp .continue
-
-        .else_branch:
-                sub r11, array_len
-
-        .continue:
-                CHECK_IF_LIVE
-                pop r11
-                ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_top_left:
-        push r11
-        pop r11
-        ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_top_right:
-        push r11
-        pop r11
-        ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_bottom_left:
-        push r11
-        pop r11
-        ret
-
-; rcx - live cells counter
-; r11 - current cell to check
-check_bottom_right:
-        push r11
-        pop r11
-        ret
 
 
 ; TODO: fix, refactor and use this part later
