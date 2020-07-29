@@ -48,7 +48,8 @@
         jmp %%done                      ;
                                         ;
         %%else_branch:                  ;
-                add r11, r15            ; add r15 to make it looped from the right
+                add r11, columns        ; add r15 to make it looped from the right
+                dec r11
                                         ;
         %%done:                         ; exit
 %endmacro
@@ -158,8 +159,8 @@
         array_one       times array_len db new_line
         array_two       times array_len db new_line
 
-        test_array      db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+        test_array      db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
+                        db   '.', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
@@ -173,7 +174,7 @@
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                        db   '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
         test_array_len  equ $-test_array
 
         section .text
@@ -188,8 +189,6 @@ start:
         mov r9, test_array  ; array_one ; this is current generation
         mov r8, array_two   ; this is next generation
 
-        ; int 3
-
         .step:
                 xchg r8, r9
                 PRINT r8, array_len
@@ -199,10 +198,11 @@ start:
                 push r9
                 mov     rdi, 1
                 call    _sleep
-                PRINT clrscrn, clrscrn_len
                 pop r9
                 pop r8
                 pop rax
+
+                PRINT clrscrn, clrscrn_len
 
                 ; ; Begin Test
                 ; xor rcx, rcx
@@ -216,13 +216,13 @@ start:
                 ; call _printf
                 ; ; End Test
 
-                ; int 3
                 jmp next_generation
                 ; jmp exit    ; for now just skip next generation
 
 
 next_generation:
         xor rbx, rbx
+        ; mov rbx, 269 ;38
         .handle_cell:
                 cmp byte [r8 + rbx], new_line
                 je .next_cell
