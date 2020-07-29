@@ -159,7 +159,7 @@
         array_one       times array_len db new_line
         array_two       times array_len db new_line
 
-        test_array      db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
+        test_array      db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
@@ -174,7 +174,7 @@
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
                         db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '#', 10
+                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
         test_array_len  equ $-test_array
 
         section .text
@@ -193,42 +193,36 @@ start:
                 xchg r8, r9
                 PRINT r8, array_len
 
-                push rax
+                ; push rax
                 push r8
                 push r9
                 mov     rdi, 1
                 call    _sleep
                 pop r9
                 pop r8
-                pop rax
+                ; pop rax
 
                 PRINT clrscrn, clrscrn_len
 
-                ; ; Begin Test
-                ; xor rcx, rcx
-                ; mov r11, 2
-                ; ; call check_top
-                ; STEP_LEFT
-                ; CHECK_IF_LIVE
-
-                ; mov rdi, format
-                ; mov rsi, rcx
-                ; call _printf
-                ; ; End Test
-
                 jmp next_generation
-                ; jmp exit    ; for now just skip next generation
 
 
 next_generation:
         xor rbx, rbx
-        ; mov rbx, 269 ;38
         .handle_cell:
                 cmp byte [r8 + rbx], new_line
                 je .next_cell
 
                 xor rcx, rcx
                 mov r11, rbx
+
+                ; cmp byte [r8 + r11], live_cell
+                ; jne .done
+                ; mov byte [r9 + r11], dead_cell
+                ; jmp .next_cell
+
+                ; .done:
+                ;         mov byte [r9 + r11], live_cell
 
                 ; insert neighbor cells check here
                 push r11
@@ -282,14 +276,17 @@ next_generation:
                 CHECK_IF_LIVE
                 cmp rcx, 1  ; current cell is live
                 je .is_live
+                mov byte [r9 + r11], dead_cell
                 cmp r10, 3
                 je .should_alive
+                jmp .next_cell
 
                 .should_alive:
-                        mov byte [r8 + r11], live_cell
+                        mov byte [r9 + r11], live_cell
                         jmp .next_cell
 
                 .is_live:
+                        mov byte [r9 + r11], live_cell
                         cmp r10, 2
                         jl .should_die
                         cmp r10, 3
@@ -297,7 +294,7 @@ next_generation:
                         jmp .next_cell
 
                 .should_die:
-                        mov byte [r8 + r11], dead_cell
+                        mov byte [r9 + r11], dead_cell
                         jmp .next_cell
 
                 .next_cell:
@@ -305,6 +302,8 @@ next_generation:
                         cmp rbx, array_len
                         jne .handle_cell
                         jmp start.step
+                        ; PRINT r9, array_len
+                        ; jmp exit
 
 
 exit:
