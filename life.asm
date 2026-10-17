@@ -138,7 +138,7 @@
 
         default rel
 
-        global start
+        global _main
         extern _printf
         extern _sleep
 
@@ -177,11 +177,17 @@
         format          db  "%d", 10, 0
 
 
-start:
+_main:
+        ; old-style binaries started at 'start' with rsp 16-byte aligned.
+        ; now dyld calls _main, and that call pushes an 8-byte return address,
+        ; so rsp is 16n-8 here. realign it so later calls (e.g. _sleep) get
+        ; the 16-byte aligned stack the ABI requires
+        sub rsp, 8
+
         PRINT clrscrn, clrscrn_len
 
-        mov r9, test_array  ; array_one ; this is current generation
-        mov r8, array_two   ; this is next generation
+        lea r9, [rel test_array] ; array_one ; this is current generation
+        lea r8, [rel array_two]  ; this is next generation
 
         .step:
                 xchg r8, r9
@@ -287,7 +293,7 @@ next_generation:
                         inc rbx
                         cmp rbx, array_len
                         jne .handle_cell
-                        jmp start.step
+                        jmp _main.step
 
 exit:
         mov       rax, 0x2000001    ; syscall exit
