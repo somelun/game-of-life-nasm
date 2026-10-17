@@ -13,7 +13,7 @@
 %macro  PRINT 2
         mov     rax, 0x2000004          ; syscall write
         mov     rdi, 1                  ; stdout identifier
-        mov     rsi, %1
+        lea     rsi, [%1]               ; rip-relative for labels, plain copy for registers
         mov     rdx, %2
         syscall
 %endmacro
@@ -306,12 +306,12 @@ first_generation:
         RANDOM
 
         push    rbx
-        mov     rdi, format
+        lea     rdi, [rel format]
         mov     rsi, rax
         call    _printf
         pop     rbx
 
-        mov     rdx, array_one  ; address of next byte to write
+        lea     rdx, [rel array_one]  ; address of next byte to write
         mov     rcx, columns    ; use rcx for loop
         mov     r9, rows
 
@@ -330,7 +330,7 @@ first_generation:
                 RANDOM
 
                 push    rbx
-                mov     rdi, format
+                lea     rdi, [rel format]
                 mov     rsi, rax
                 call    _printf
                 pop     rbx
