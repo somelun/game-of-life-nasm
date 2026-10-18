@@ -1,11 +1,7 @@
 ; MacOS x64 NASM implementation of Conway's Game of Life
 
-
-
-; TODO: later try to use special symbols
-%define live_cell 35 ; '▊'
-%define dead_cell 46 ; '░'
-
+%define live_cell 35
+%define dead_cell 46
 
 ; print to screen
 ;   %1 - what to print
@@ -136,46 +132,52 @@
 %endmacro
 
 
-        default rel
+default rel
 
-        global _main
-        extern _printf
-        extern _sleep
+global _main
+extern _printf
+extern _sleep
 
 
-        section .data
+section .data
 
-        ; see https://stackoverflow.com/a/30253373 for the details
-        clrscrn         db 27, "[2J", 27, "[H"
-        clrscrn_len     equ $-clrscrn
+; see https://stackoverflow.com/a/30253373 for the details
+clrscrn         db 27, "[2J", 27, "[H"
+clrscrn_len     equ $ - clrscrn
 
-        new_line        equ 10  ; ascii code for new line
+new_line        equ 10  ; ascii code for new line
 
-        rows            equ 10
-        columns         equ 10
-        array_len       equ rows * columns + rows
+live_glyph      db "██"
+live_glyph_len  equ $ - live_glyph
+dead_glyph      db "░░"
+dead_glyph_len  equ $ - dead_glyph
 
-        ; initialize both arrays with new_line symbol
-        array_one       times array_len db new_line
-        array_two       times array_len db new_line
+rows            equ 10
+columns         equ 10
+render_buf_len  equ rows * columns * live_glyph_len + rows
+render_buf      times render_buf_len db 0
+array_len       equ rows * columns + rows
 
-        test_array      db   '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-                        db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
-        test_array_len  equ $-test_array
+; initialize both arrays with new_line symbol
+array_one       times array_len db new_line
+array_two       times array_len db new_line
 
-        section .text
+test_array      db   '.', '#', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+                db   '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 10
+test_array_len  equ $ - test_array
 
-        ; used for _printf call
-        format          db  "%d", 10, 0
+section .text
 
+; used for _printf call
+format          db  "%d", 10, 0
 
 _main:
         ; old-style binaries started at 'start' with rsp 16-byte aligned.
