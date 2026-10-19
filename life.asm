@@ -20,9 +20,9 @@
 ;   r11 - index of cell,
 ;   rcx - live cells counter
 %macro CHECK_IF_LIVE 0
-        cmp byte [r8 + r11], live_cell
-        jne %%done
-        inc rcx
+        cmp     byte [r8 + r11], live_cell
+        jne     %%done
+        inc     rcx
 
         %%done:
 %endmacro
@@ -31,21 +31,21 @@
 ;   current index in r11
 ;   return index in r11
 %macro STEP_LEFT 0
-        mov r15, columns
-        add r15, 1                      ; +1, because extra column of 10
+        mov     r15, columns
+        add     r15, 1                  ; +1, because extra column of 10
 
-        xor rdx, rdx                    ; rdx must be zeroed before div
-        mov rax, r11                    ; place current column to rax
-        div r15                         ; calculate rax % r15
+        xor     rdx, rdx                ; rdx must be zeroed before div
+        mov     rax, r11                ; place current column to rax
+        div     r15                     ; calculate rax % r15
                                         ; reminder from div goes to rdx
-        cmp rdx, 0                      ; compare rdx and 0
-        je %%else_branch                ; if rdx == 0 -> left column, go to %%else_branch
-        dec r11                         ; else just dec r11
-        jmp %%done                      ;
+        cmp     rdx, 0                  ; compare rdx and 0
+        je      %%else_branch           ; if rdx == 0 -> left column, go to %%else_branch
+        dec     r11                     ; else just dec r11
+        jmp     %%done                  ;
                                         ;
         %%else_branch:                  ;
-                add r11, columns        ; add r15 to make it looped from the right
-                dec r11
+                add     r11, columns    ; add r15 to make it looped from the right
+                dec     r11
                                         ;
         %%done:                         ; exit
 %endmacro
@@ -193,7 +193,8 @@ _main:
 
         .step:
                 xchg r8, r9
-                PRINT r8, array_len
+                call render
+                PRINT render_buf, render_buf_len
 
                 ; push rax
                 push r8
@@ -296,6 +297,44 @@ next_generation:
                         cmp rbx, array_len
                         jne .handle_cell
                         jmp _main.step
+
+render:
+        xor     r12, r12                        ; i = 0
+        lea     r13, [rel render_buf]           ; dst = render_buf
+
+        .cell:
+                ; check current cell
+                mov     al, [r8 + r12]
+                cmp     al, new_line
+                je      .newline
+
+                ; choose glyph: assume dead, switch to live if needed
+                lea     rsi, [rel dead_glyph]   ; glyph = dead_glyph
+                cmp     al, live_cell
+                jne     .copy_start             ; not live → keep dead, skip next line
+                lea     rsi, [rel live_glyph]   ; glyph = live_glyph
+
+        .copy_start:
+                xor     rcx, rcx                ; k = 0
+
+        .copy:
+                mov     al, [rsi + rcx]
+                mov     [r13], al
+                inc     rcx
+                inc     r13
+                cmp     rcx, live_glyph_len
+                jb      .copy
+                jmp     .next
+
+        .newline:
+                mov     byte [r13], new_line
+                inc     r13
+
+        .next:
+                inc     r12
+                cmp     r12, array_len
+                jb      .cell
+                ret
 
 exit:
         mov       rax, 0x2000001    ; syscall exit
