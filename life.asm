@@ -30,6 +30,7 @@
 ; move index left
 ;   current index in r11
 ;   return index in r11
+;   clobbers: rax, rdx, r15
 %macro STEP_LEFT 0
         mov     r15, columns
         add     r15, 1                  ; +1, because extra column of 10
@@ -53,7 +54,8 @@
 ; move index right
 ;   current index in r11
 ;   return index in r11
-%macro STEP_RIGHT 0
+;   clobbers: rax, rdx, r15
+%macro  0
         mov r15, columns
         add r15, 1                      ; +1, because extra column of 10
 
@@ -77,6 +79,7 @@
 ; move index up
 ;   current index in r11
 ;   return index in r11
+;   clobbers: rax, rdx, r15
 %macro STEP_UP 0                        ; TODO: add comments
         mov r15, columns
         add r15, 1                      ; +1, because extra column of 10
@@ -96,6 +99,7 @@
 ; move index down
 ;   current index in r11
 ;   return index in r11
+;   clobbers: rax, rdx, r15
 %macro STEP_DOWN 0                      ; TODO: add comments
         mov r15, columns
         add r15, 1                      ; +1, because extra column of 10
@@ -136,7 +140,7 @@ default rel
 
 global _main
 extern _printf
-extern _sleep
+extern _usleep
 
 
 section .data
@@ -199,8 +203,8 @@ _main:
                 ; push rax
                 push r8
                 push r9
-                mov     rdi, 1
-                call    _sleep
+                mov     rdi, 50000
+                call    _usleep
                 pop r9
                 pop r8
                 ; pop rax
