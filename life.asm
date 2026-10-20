@@ -27,92 +27,49 @@
 %%done:
 %endmacro
 
-; move index left
-;   current index in r11
-;   return index in r11
-;   clobbers: rax, rdx, r15
+; move index left, wrapping from the first column to the last
+;   r8  - current board
+;   r11 - index of cell in, index of left neighbor out
+;   the cell left of column 0 is the previous row's newline (or -1 for index 0)
 %macro STEP_LEFT 0
-        mov     r15, columns
-        add     r15, 1                  ; +1, because extra column of 10
-
-        xor     rdx, rdx                ; rdx must be zeroed before div
-        mov     rax, r11                ; place current column to rax
-        div     r15                     ; calculate rax % r15
-                                        ; reminder from div goes to rdx
-        cmp     rdx, 0                  ; compare rdx and 0
-        je      %%else_branch           ; if rdx == 0 -> left column, go to %%else_branch
-        dec     r11                     ; else just dec r11
-        jmp     %%done                  ;
-                                        ;
-%%else_branch:                          ;
-        add     r11, columns            ; add r15 to make it looped from the right
         dec     r11
-                                        ;
-%%done:                                 ; exit
+        js      %%wrap                  ; index 0 -> -1: wrap
+        cmp     byte [r8 + r11], new_line
+        jne     %%done                  ; landed on a cell: done
+%%wrap:
+        add     r11, columns            ; back to the last column of the same row
+%%done:
 %endmacro
 
-; move index right
-;   current index in r11
-;   return index in r11
-;   clobbers: rax, rdx, r15
+; move index right, wrapping from the last column to the first
+;   r8  - current board
+;   r11 - index of cell in, index of right neighbor out
+;   the cell right of the last column is this row's newline
 %macro STEP_RIGHT 0
-        mov     r15, columns
-        add     r15, 1                  ; +1, because extra column of 10
-
-        xor     rdx, rdx                ; rdx must be zeroed before div
-        mov     rax, r11                ; place current column to rax
-        add     rax, 2                  ; calculate (current column + 2) % r15, if == 0, then it is a right column
-        div     r15                     ; calculate rax % r15
-                                        ; reminder from div goes to rdx
-        cmp     rdx, 0                  ; compare rdx and 0,
-        je      %%else_branch           ; if rdx == 0 -> right column, go to %%else_branch
-        inc     r11                     ; else just inc r11
-        jmp     %%done                  ;
-                                        ;
-%%else_branch:                          ;
-        sub     r11, columns            ; sub columns number from r11
-        inc     r11                     ; and add 1 to make it looped from the left
-                                        ;
-%%done:                                 ; exit
+        inc     r11
+        cmp     byte [r8 + r11], new_line
+        jne     %%done                  ; landed on a cell: done
+        sub     r11, columns            ; back to the first column of the same row
+%%done:
 %endmacro
 
-; move index up
-;   current index in r11
-;   return index in r11
-;   clobbers: rax, rdx, r15
-%macro STEP_UP 0                        ; TODO: add comments
-        mov     r15, columns
-        add     r15, 1                  ; +1, because extra column of 10
-                                        ;
-        sub     r11, r15                ;
-        cmp     r11, 0                  ;
-        jl      %%else_branch           ; if less, make it looped
-        jmp     %%done                  ;
-                                        ;
-%%else_branch:                          ;
-        mov     r15, array_len          ;
-        add     r11, r15                ;
-                                        ;
-%%done:                                 ;
+; move index up, wrapping from the top row to the bottom row
+;   r11 - index of cell in, index of upper neighbor out
+%macro STEP_UP 0
+        sub     r11, row_len
+        jns     %%done                  ; still inside the board: done
+        add     r11, array_len          ; above the top: go to the bottom row
+%%done:
 %endmacro
 
-; move index down
-;   current index in r11
-;   return index in r11
-;   clobbers: rax, rdx, r15
-%macro STEP_DOWN 0                      ; TODO: add comments
-        mov     r15, columns
-        add     r15, 1                  ; +1, because extra column of 10
-                                        ;
-        add     r11, r15                ;
-        cmp     r11, array_len          ;
-        jae     %%else_branch           ;
-        jmp     %%done                  ;
-                                        ;
-%%else_branch:                          ;
-        sub     r11, array_len          ;
-                                        ;
-%%done:                                 ;
+; move index down, wrapping from the bottom row to the top row
+;   r11 - index of cell in, index of lower neighbor out
+%macro STEP_DOWN 0
+        add     r11, row_len
+        cmp     r11, array_len
+        jb      %%done                  ; still inside the board: done
+        sub     r11, array_len          ; below the bottom: go to the top row
+%%done:
 %endmacro
 
 
@@ -158,6 +115,7 @@ dead_glyph_len  equ $ - dead_glyph
 
 rows            equ 10
 columns         equ 10
+row_len         equ columns + 1         ; cells in a row + its newline
 render_buf_len  equ rows * columns * live_glyph_len + rows
 render_buf      times render_buf_len db 0
 array_len       equ rows * columns + rows
