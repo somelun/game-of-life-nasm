@@ -55,7 +55,7 @@
 ;   current index in r11
 ;   return index in r11
 ;   clobbers: rax, rdx, r15
-%macro  0
+%macro STEP_RIGHT 0
         mov r15, columns
         add r15, 1                      ; +1, because extra column of 10
 
